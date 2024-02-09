@@ -89,7 +89,7 @@
 
 import { MapContainer, Marker, Popup, useMap } from "react-leaflet"
 import L from "leaflet"
-import { useEffect, useState } from "react"
+import { useEffect, useState, useRef } from "react"
 import "leaflet-routing-machine"
 import useGeoLocation from "./useGeoLocation"
 
@@ -97,7 +97,7 @@ const Map = () => {
 	const location = useGeoLocation()
 	const [routeCoordinates, setRouteCoordinates] = useState([])
 
-	const fetchRoute = async () => {
+	const fetchRoute = async (start, end) => {
 		try {
 			const query = new URLSearchParams({
 				key: "bd5303e6-c8a7-4fc8-a73d-d65ce9851c11",
@@ -112,8 +112,8 @@ const Map = () => {
 					},
 					body: JSON.stringify({
 						points: [
-							[75.56484, 26.84285],
-							[75.56375, 26.84254],
+							[start[1], start[0]],
+							[end[1], end[0]],
 						],
 						point_hints: [
 							"Manipal University Jaipur, Jaipur, Rajasthan, India",
@@ -151,7 +151,7 @@ const Map = () => {
 	}
 
 	useEffect(() => {
-		fetchRoute()
+		fetchRoute([26.84285, 75.56484], [26.84254, 75.56375])
 	}, [])
 
 	// console.log(routeCoordinates)
@@ -176,7 +176,10 @@ const Map = () => {
 			<MapLayers />
 			<ZoomControl />
 			{routeCoordinates.length > 0 && (
-				<Path routeCoordinates={routeCoordinates} />
+				<Path
+					routeCoordinates={routeCoordinates}
+					fetchRoute={fetchRoute}
+				/>
 			)}
 		</MapContainer>
 	)
@@ -207,31 +210,90 @@ const ZoomControl = () => {
 	}, [map])
 	return null
 }
-
-const Path = ({ routeCoordinates = [] }) => {
+const Path = ({ routeCoordinates = [], fetchRoute }) => {
 	const map = useMap()
+	const startMarkerRef = useRef(null)
+	const endMarkerRef = useRef(null)
+	const polylineRef = useRef(null)
 
 	useEffect(() => {
-		// console.log(routeCoordinates.slice(-1))
-
 		const polyline = L.polyline(routeCoordinates, {
 			color: "red",
 		}).addTo(map)
-		const startMarker = L.marker(routeCoordinates[0]).addTo(map)
-		const endMarker = L.marker(
-			routeCoordinates[routeCoordinates.length - 1]
-		).addTo(map)
-		setTimeout(() => {
-			map.fitBounds(polyline.getBounds())
-			map.zoomOut(1, { animate: true })
-		}, 100) // Adjust the delay time as needed
+		polylineRef.current = polyline
+
+		if (startMarkerRef.current) {
+			map.removeLayer(startMarkerRef.current)
+		}
+		if (endMarkerRef.current) {
+			map.removeLayer(endMarkerRef.current)
+		}
+
+		const start = routeCoordinates[0]
+		const end = routeCoordinates[routeCoordinates.length - 1]
+		const newStartMarker = L.marker(start, {
+			draggable: true,
+		}).addTo(map)
+		const newEndMarker = L.marker(end, {
+			draggable: true,
+		}).addTo(map)
+
+		startMarkerRef.current = newStartMarker
+		endMarkerRef.current = newEndMarker
+
+		const updateRoute = () => {
+			const startLatLng = newStartMarker.getLatLng()
+			const endLatLng = newEndMarker.getLatLng()
+			const startCoordinates = [startLatLng.lat, startLatLng.lng]
+			const endCoordinates = [endLatLng.lat, endLatLng.lng]
+			fetchRoute(startCoordinates, endCoordinates)
+		}
+
+		newStartMarker.on("dragend", updateRoute)
+		newEndMarker.on("dragend", updateRoute)
+
+		// const bounds = polyline.getBounds()
+
+		map.setView(start, 19)
 
 		return () => {
-			map.removeLayer(polyline)
+			map.removeLayer(polylineRef.current)
+			newStartMarker.off("dragend", updateRoute)
+			newEndMarker.off("dragend", updateRoute)
 		}
-	}, [map, routeCoordinates])
+	}, [map, routeCoordinates, fetchRoute])
 
 	return null
 }
 
 export default Map
+
+function calculateBearing(start, end) {
+	const startLat = toRadians(start[0])
+	const startLng = toRadians(start[1])
+	const endLat = toRadians(end[0])
+	const endLng = toRadians(end[1])
+
+	const dLng = endLng - startLng
+
+	const y = Math.sin(dLng) * Math.cos(endLat)
+	const x =
+		Math.cos(startLat) * Math.sin(endLat) -
+		Math.sin(startLat) * Math.cos(endLat) * Math.cos(dLng)
+
+	let bearing = Math.atan2(y, x)
+	bearing = toDegrees(bearing)
+	bearing = (bearing + 360) % 360 // Normalize to range [0, 360)
+
+	return bearing
+}
+
+// Function to convert degrees to radians
+function toRadians(degrees) {
+	return (degrees * Math.PI) / 180
+}
+
+// Function to convert radians to degrees
+function toDegrees(radians) {
+	return (radians * 180) / Math.PI
+}
