@@ -100,47 +100,50 @@ const Map = () => {
 	const fetchRoute = async () => {
 		try {
 			const query = new URLSearchParams({
-				profile: "car",
-				points: [
-					[26.84293, 75.56543],
-					[26.84352, 75.56654],
-				],
-				// point_hint: "string",
-				// snap_prevention: "string",
-				// curbside: "any",
-				// locale: "en",
-				// elevation: "false",
-				// details: "string",
-				// optimize: "false",
-				// instructions: "true",
-				// calc_points: "true",
-				// debug: "false",
-				// points_encoded: "true",
-				// "ch.disable": "false",
-				// heading: "0",
-				// heading_penalty: "120",
-				// pass_through: "false",
-				// algorithm: "round_trip",
-				// "round_trip.distance": "10000",
-				// "round_trip.seed": "0",
-				// "alternative_route.max_paths": "2",
-				// "alternative_route.max_weight_factor": "1.4",
-				// "alternative_route.max_share_factor": "0.6",
 				key: "bd5303e6-c8a7-4fc8-a73d-d65ce9851c11",
 			}).toString()
 
 			const resp = await fetch(
 				`https://graphhopper.com/api/1/route?${query}`,
-				{ method: "GET" }
+				{
+					method: "POST",
+					headers: {
+						"Content-Type": "application/json",
+					},
+					body: JSON.stringify({
+						points: [
+							[75.56484, 26.84285],
+							[75.56375, 26.84254],
+						],
+						point_hints: [
+							"Manipal University Jaipur, Jaipur, Rajasthan, India",
+							"Manipal University Jaipur, Jaipur, Rajasthan, India",
+						],
+						snap_preventions: ["motorway", "ferry", "tunnel"],
+						details: ["road_class", "surface"],
+						profile: "foot",
+						locale: "en",
+						instructions: true,
+						calc_points: true,
+						points_encoded: false,
+					}),
+				}
 			)
 
-			const data = await resp.text()
-			console.log(data)
-			// const data = await response.json()
+			const data = await resp.json()
+			// console.log(data)
+
 			const { paths } = data
 			if (paths && paths.length > 0) {
-				const { points } = paths[0]
-				setRouteCoordinates(points)
+				const { coordinates } = paths[0].points
+
+				const swappedCoordinates = coordinates.map((coord) => [
+					coord[1],
+					coord[0],
+				])
+
+				console.log(swappedCoordinates)
+				setRouteCoordinates(swappedCoordinates)
 			}
 		} catch (error) {
 			console.error("Error fetching route:", error)
@@ -150,6 +153,8 @@ const Map = () => {
 	useEffect(() => {
 		fetchRoute()
 	}, [])
+
+	// console.log(routeCoordinates)
 
 	return (
 		<MapContainer
@@ -203,14 +208,24 @@ const ZoomControl = () => {
 	return null
 }
 
-const Path = ({ routeCoordinates }) => {
+const Path = ({ routeCoordinates = [] }) => {
 	const map = useMap()
 
 	useEffect(() => {
-		const polyline = L.polyline(routeCoordinates, { color: "red" }).addTo(
-			map
-		)
-		map.fitBounds(polyline.getBounds())
+		// console.log(routeCoordinates.slice(-1))
+
+		const polyline = L.polyline(routeCoordinates, {
+			color: "red",
+		}).addTo(map)
+		const startMarker = L.marker(routeCoordinates[0]).addTo(map)
+		const endMarker = L.marker(
+			routeCoordinates[routeCoordinates.length - 1]
+		).addTo(map)
+		setTimeout(() => {
+			map.fitBounds(polyline.getBounds())
+			map.zoomOut(1, { animate: true })
+		}, 100) // Adjust the delay time as needed
+
 		return () => {
 			map.removeLayer(polyline)
 		}
