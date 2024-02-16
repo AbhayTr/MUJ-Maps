@@ -2,7 +2,6 @@
 import "./App.css"
 import "leaflet/dist/leaflet.css"
 import Map from "./Map"
-import Search from "./Search"
 
 function App() {
 	return (
@@ -18,7 +17,7 @@ function App() {
 					</Popup>
 				</Marker>
 			</MapContainer> */}
-			<Search />
+
 			<Map />
 		</div>
 	)
