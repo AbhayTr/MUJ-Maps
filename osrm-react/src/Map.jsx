@@ -2,16 +2,15 @@ import { MapContainer, Marker, Popup, useMap } from "react-leaflet"
 import L from "leaflet"
 import { useEffect, useState } from "react"
 import "leaflet-routing-machine"
-import useGeoLocation from "./useGeoLocation"
+import GeoLocation from "./GeoLocation"
 import Path from "./RoutingMachine"
 import useStateStore from "./store"
 import Search from "./Search"
 
 const Map = () => {
-	const location = useGeoLocation()
 	const [routeCoordinates, setRouteCoordinates] = useState([])
 	const searchResults = useStateStore((state) => state.searchResults)
-
+	const location = useStateStore((state) => state.location)
 	useEffect(() => {
 		console.log(searchResults, "searchResults")
 	}, [searchResults])
@@ -69,9 +68,22 @@ const Map = () => {
 		}
 	}
 
-	useEffect(() => {
-		fetchRoute([26.84285, 75.56484], [26.84254, 75.56375])
-	}, [])
+	const handleDirectionsClick = (result) => {
+		console.log(result.data, "result")
+		if (result.data.lat && result.data.lon) {
+			const { lat, lon } = result.data
+			// Remove previous markers
+			console.log(lat, lon)
+			if (location.loaded && !location.error) {
+				fetchRoute(
+					[location.coordinates.lat, location.coordinates.lng],
+					[lat, lon]
+				)
+			} else {
+				fetchRoute([26.84285, 75.56484], [lat, lon])
+			}
+		}
+	}
 
 	return (
 		<MapContainer
@@ -90,7 +102,8 @@ const Map = () => {
 					<Popup>You are here</Popup>
 				</Marker>
 			)}
-			<Search />
+			<GeoLocation />
+			<Search handleDirectionsClick={handleDirectionsClick} />
 			<MapLayers />
 			<ZoomControl />
 			{routeCoordinates.length > 0 && (

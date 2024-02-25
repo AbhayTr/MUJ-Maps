@@ -15,13 +15,6 @@ const Path = ({ routeCoordinates = [], fetchRoute }) => {
 		}).addTo(map)
 		polylineRef.current = polyline
 
-		if (startMarkerRef.current) {
-			map.removeLayer(startMarkerRef.current)
-		}
-		if (endMarkerRef.current) {
-			map.removeLayer(endMarkerRef.current)
-		}
-
 		const start = routeCoordinates[0]
 		const end = routeCoordinates[routeCoordinates.length - 1]
 		const newStartMarker = L.marker(start, {
@@ -53,6 +46,8 @@ const Path = ({ routeCoordinates = [], fetchRoute }) => {
 			map.removeLayer(polylineRef.current)
 			newStartMarker.off("dragend", updateRoute)
 			newEndMarker.off("dragend", updateRoute)
+			map.removeLayer(startMarkerRef.current)
+			map.removeLayer(endMarkerRef.current)
 		}
 	}, [map, routeCoordinates, fetchRoute])
 

@@ -1,9 +1,7 @@
-import { useEffect, useState } from "react"
-const useGeoLocation = () => {
-	const [location, setLocation] = useState({
-		loaded: false,
-		coordinates: { lat: "", lng: "" },
-	})
+import { useEffect } from "react"
+import useStateStore from "./store"
+const GeoLocation = () => {
+	const { setLocation } = useStateStore()
 
 	const onSuccess = (location) => {
 		setLocation({
@@ -33,6 +31,6 @@ const useGeoLocation = () => {
 		navigator.geolocation.getCurrentPosition(onSuccess, onError)
 	}, [])
 
-	return location
+	return <></>
 }
-export default useGeoLocation
+export default GeoLocation

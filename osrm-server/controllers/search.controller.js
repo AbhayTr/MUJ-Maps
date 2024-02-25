@@ -79,9 +79,13 @@ const getRoomResults = async (q) => {
 const getSearchResults = async (req, res) => {
 	const { q } = req.query
 
-	const nominatinResponse = getNominatinResults(q)
-	const facultyResponse = getFacultyResults(q)
-	const roomResponse = getRoomResults(q)
+	const nominatinResponse = await getNominatinResults(q)
+	const facultyResponse = await getFacultyResults(q)
+	const roomResponse = await getRoomResults(q)
+
+	console.log(nominatinResponse)
+	console.log(facultyResponse)
+	console.log(roomResponse)
 
 	const results = [...nominatinResponse, ...facultyResponse, ...roomResponse]
 
