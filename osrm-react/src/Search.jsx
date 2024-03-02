@@ -73,6 +73,7 @@ const Search = ({ handleDirectionsClick }) => {
 				type="text"
 				value={search}
 				onChange={handleSearch}
+				placeholder="Search Here"
 			/>
 			<button
 				className="absolute top-4 right-3 text-2xl"

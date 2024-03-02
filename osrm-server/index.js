@@ -6,7 +6,7 @@ const mongoose = require("mongoose")
 const indexRoute = require("./routes/index.route")
 
 app.use(cors())
-
+app.use(express.static("statics"))
 app.use("/api", indexRoute)
 
 const mongoURI = "mongodb://127.0.0.1:27017/campus-maps"
