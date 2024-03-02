@@ -22,7 +22,7 @@ const Search = ({ handleDirectionsClick }) => {
 	// )
 
 	const fetchResults = useDebouncedCallback(() => {
-		fetch("http://localhost:3000/api/search?q=" + search)
+		fetch("/api/search?q=" + search)
 			.then((res) => res.json())
 			.then((data) => setSearchResults(data))
 	}, 300)
